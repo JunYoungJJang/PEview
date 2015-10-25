@@ -56,54 +56,58 @@ _________|______|_____  &   ortable $$$$$ xcutable       _____|______|_________\
 
 void show_Allhex(char* str, FILE* input)   // 추가 할꺼: fseek
 {
-	 unsigned char hex;
-	 int i, j;
+	unsigned char hex;
+	int i, j;
 
-	 char temp[17];
+	char temp[17];
 
-	 system("cls");
+	system("cls");
 
-	 fseek(input, 0, SEEK_SET);
-	 i = 0;
+	fseek(input, 0, SEEK_SET);
+	i = 0;
 
-	 while(!feof(input)) {
-		 hex = fgetc(input);
+	while (!feof(input)) {
+		hex = fgetc(input);
 
-		 temp[i%16] = hex;
+		temp[i % 16] = hex;
 
-		 if(i%16 == 0) {
-			 printf("%08x ", i);
-		 }
-		 printf("%02x ", hex);
-		
-		 if(i%8 == 7) {
+		if (i % 16 == 0) {
+			printf("%08x ", i);
+		}
+		printf("%02x ", hex);
+
+		if (i % 8 == 7) {
 			putchar(' ');
-		 }
-		 if(i%16 == 15) {
-			 temp[16] = '\0';
-			 printf("  ");
+		}
+		if (i % 16 == 15) {
+			temp[16] = '\0';
+			printf("  ");
 
-			 for(j=0; j<17; j++) {
-				 if(temp[j] >= 0x21 && temp[j] <= 0x7E) {   // 출력 가능한 문자
-					 putchar(temp[j]);
-				 } else {
-					 putchar('.');
-				 }
-			 }
+			for (j = 0; j<17; j++) {
+				if (temp[j] >= 0x21 && temp[j] <= 0x7E) {   // 출력 가능한 문자
+					putchar(temp[j]);
+				}
+				else {
+					putchar('.');
+				}
+			}
 
-			 putchar('\n');
-		 }
-		 if(i%336 == 335) {
-			 printf("\nPress 'q' to Quit! \n");
+			putchar('\n');
+		}
+		if (i % 336 == 335) {
+			printf("\nPress 'q' to Quit! \n");
 
-			 if(getch() == 'q') {
+			if (getch() == 'q') {
 				return;
-			 }
-		 }
+			}
 
-		 i++;
-	 }
+			system("cls");
+		}
+
+		i++;
+	}
 }
+
 
 void show_fileMemMap(char* str, FILE* input)
 {
@@ -163,9 +167,146 @@ void show_DosHeader(char* str, FILE* input)
 	} while (getch() != 'q');
 }
 
-void show_NTHeaders(char* str, FILE* input)
+void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 보여 주기, DLLCharacteristics
 {
-	 
+	int i, j, tempi, flag;
+	unsigned short temps;
+	unsigned char* ptr;
+
+	char* NtHeaders[3] = { "Signature", "FileHeader", "OptionalHeader" };
+	char* NtType[3] = { "DWORD", "IMAGE_FILE_HEADER", "IMAGE_OPTIONAL_HEADER32" };
+
+	char* FileHeader[7] = { "Machine", "NumberOfSections", "TimeDateStamp", "PointerToSymbolTable", "NumberOfSymbols", "SizeOfOptionalHeader", "Characteristics" };
+	char* FileType[7] = { "WORD", "WORD", "DWORD", "DWORD", "DWORD", "WORD", "WORD" };
+
+	char* OptionalHeader[] = {"Magic", "MajorLinkerVersion", "MinorLinkerVersion", "SizeOfCode", "SizeOfInitializedData", "SizeOfUnInitionalizedData", "AddressOfEntryPoint", "BaseOfCode", "BaseOfData", "ImageBase", "SectionAlignment", "FileAlignment", "MajorOperatingSystemVersion", "MinorOperatingSystemVersion", "MajorImageVersion", "MinorImageVersion", "MajorSubsystemVersion", "MinorSubsystemVersion", "Win32VersionValue", "SizeOfImage", "SizeOfHeaders", "Checksum", "Subsystem", "DllCharacteristics", "SizeOfStackReserve", "SizeOfStackCommit", "SizeOfHeapReserver", "SizeOfHeapCommit", "LoaderFlags", "NumberOfRvaAndSizes", "DataDirectory[16]" };
+	char* OptionalType[] = { "WORD", "BYTE", "BYTE", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "WORD", "WORD", "WORD", "WORD", "WORD", "WORD", "DWORD", "DWORD", "DWORD", "DWORD", "WORD", "WORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "IMAGE_DATA_DIRECTORY" };
+
+	char* core[] = { "Magic", "AddressOfEntryPoint", "ImageBase", "SectionAlignment", "FileAlignment", "SizeOfImage", "SizeOfHeaders", "Subsystem", "NumberOfRvaAndSizes" };
+
+	fseek(input, 0x3C, SEEK_SET);
+
+	ptr = &tempi;
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+
+	fseek(input, tempi, SEEK_SET);
+
+	ptr = &tempi;
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+
+	system("cls");
+	printf("typedef strunct _IMAGE_NT_HEADERS {  \n");
+	for (i = 0; i < 3; i++) {
+		if (!strcmp("Signature", NtHeaders[i])) {
+			ptr = &tempi;
+			printf("   %-30s %-10s ", NtType[i], NtHeaders[i]);
+			printf("= %08x(%s) \n", tempi, ptr);
+		}
+		else {
+			printf("   %-30s %10s \n", NtType[i], NtHeaders[i]);
+		}
+	}
+	printf("} IMAGE_NT_HEADER32, *PIMAGE_NT_HEADER32 \n\n");
+
+	getch();
+
+	system("cls");
+
+	fseek(input, 0x3C, SEEK_SET);
+
+	ptr = &tempi;
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+	fseek(input, tempi += 4, SEEK_SET);
+	printf("typedef struct _IMAGE_FILE_HEADER { \n");
+	for (i = 0; i < 7; i++) {
+		if (!strcmp(FileType[i], "WORD")) {
+			fseek(input, tempi, SEEK_SET);
+			printf("   %-10s %-20s = ", FileType[i], FileHeader[i]);
+
+			ptr = &temps;
+			for (j = 0; j < 2; j++) {
+				*(ptr++) = fgetc(input);
+			}
+			printf("%04X \n", temps);
+
+			tempi += 2;
+		}
+		else {
+			printf("   %-10s %-20s \n", FileType[i], FileHeader[i]);
+			tempi += 4;
+		}
+	}
+	printf("} IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER; \n\n");
+
+	getch();
+
+	system("cls");
+
+	fseek(input, 0x3C, SEEK_SET);
+	ptr = &tempi;
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+	fseek(input, tempi += 4 + sizeof(IMAGE_FILE_HEADER) , SEEK_SET);
+
+	printf("typedef struct _IMAGE_OPTIONAL_HEADER { \n");
+	for (i = 0; i < sizeof(OptionalHeader) / sizeof(char*); i++) {
+		flag = 0;
+		for (j = 0; j < sizeof(core) / sizeof(char*); j++) {
+			if (!strcmp(OptionalHeader[i], core[j])) {
+				flag = 1;
+				break;
+			}
+		}
+
+		if (flag) {   // 중요 멤버이면
+			if (!strcmp(OptionalType[i], "WORD")) {
+				fseek(input, tempi, SEEK_SET);
+				printf("   %-10s %-30s = ", OptionalType[i], OptionalHeader[i]);
+
+				ptr = &temps;
+				for (j = 0; j < 2; j++) {
+					*(ptr++) = fgetc(input);
+				}
+				printf("%04X \n", temps);
+
+				tempi += 2;
+			}
+			else {
+				fseek(input, tempi, SEEK_SET);
+				printf("   %-10s %-30s = ", OptionalType[i], OptionalHeader[i]);
+
+				ptr = &tempi;
+				for (j = 0; j < 4; j++) {
+					*(ptr++) = fgetc(input);
+				}
+				printf("%08X \n", tempi);
+
+				tempi = ftell(input);
+			}
+		}
+		else {
+			printf("   %-10s %s \n", OptionalType[i], OptionalHeader[i]);
+			if (!strcmp(OptionalType[i], "WORD")) {
+				tempi += 2;
+			}
+			else if(!strcmp(OptionalType[i], "BYTE")) {
+				tempi += 1;
+			} 
+			else {
+				tempi += 4;
+			}
+		}
+	}
+	printf("} IMAGE_OPTIONAL_HEADER32, *PIMAGE_OPTIONAL_HEADER32; \n\n");
+
+	getch();
 }
 
 void show_SectionHeaders(char* str, FILE* input)
