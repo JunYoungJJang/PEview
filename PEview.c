@@ -11,11 +11,9 @@ void textcolor(int color_number) { // 가져온 함수(글자 색 바꾸기)
 }
 /*
 여기에서 맨 뒤에 두자리, 즉 16진수로 0x0000 ~ 0x00FF까지가 이 함수에서 의미있는 매개 변수 이다.
-
 각 16진수에 해당하는 색은 다음과 같다.
 0 - 검정색, 1 - 파랑색, 2 - 초록색, 3 - 옥색, 4 - 빨간색, 5 - 자주색, 6 - 노랑색, 7 - 흰색, 8 - 회색,
 9 - 연한 파랑색, A - 연한 초록색, B - 연한 옥색, C - 연한 빨간색, D - 연한 자주색, E - 연한 노랑색, F - 밝은 흰색
-
 즉, [밝은 흰색]의 음영색을 가진 [빨간색]의 글자를 출력하고 싶다면
 0x00F4 라는 매개변수 값을 넘겨주면 되는 것이다.
 */
@@ -138,7 +136,7 @@ void show_DosHeader(char* str, FILE* input)
 
 				printf("%8X", temps, str);
 
-				ptr = &temps;
+				ptr = (char*)&temps;
 
 				putchar('(');
 				for (j = 0; j < 2; j++) {
@@ -150,7 +148,7 @@ void show_DosHeader(char* str, FILE* input)
 				printf("%10s %10s = ", "LONG", varName[i]);
 
 				fseek(input, 0x3C, SEEK_SET);
-				ptr = &tempi;
+				ptr = (char *)&tempi;
 				for (j = 0; j < 4; j++) {
 					*(ptr++) = fgetc(input);
 				}
@@ -170,8 +168,12 @@ void show_DosHeader(char* str, FILE* input)
 void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 보여 주기, DLLCharacteristics
 {
 	int i, j, tempi, flag;
-	unsigned short temps;
 	unsigned char* ptr;
+
+	union temp {
+		short temps;
+		int temp4;
+	} Temp;
 
 	char* NtHeaders[3] = { "Signature", "FileHeader", "OptionalHeader" };
 	char* NtType[3] = { "DWORD", "IMAGE_FILE_HEADER", "IMAGE_OPTIONAL_HEADER32" };
@@ -184,16 +186,18 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 
 	char* core[] = { "Magic", "AddressOfEntryPoint", "ImageBase", "SectionAlignment", "FileAlignment", "SizeOfImage", "SizeOfHeaders", "Subsystem", "NumberOfRvaAndSizes" };
 
+	char* Directory[16] = { "EXPORT Directory", "IMPORT Directory", "RESOURCE Directory", "EXCEPTION Directory", "SECURITY Directory", "BASERELOC Directory", "DEBUG Directory", "COPYRIGHT Directory", "GLOBALPTR Directory", "TLS Directory", "LOAD_CONFIG Directory", "BOUND_IMPORT Directory", "IAT Directory", "DELAY Directory", "COM_DESCRIPTOR Directory", "Reserved Directory" };
+
 	fseek(input, 0x3C, SEEK_SET);
 
-	ptr = &tempi;
+	ptr = (unsigned char*)&tempi;
 	for (i = 0; i < 4; i++) {
 		*(ptr++) = fgetc(input);
 	}
 
 	fseek(input, tempi, SEEK_SET);
 
-	ptr = &tempi;
+	ptr = (unsigned char*)&tempi;
 	for (i = 0; i < 4; i++) {
 		*(ptr++) = fgetc(input);
 	}
@@ -202,7 +206,7 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 	printf("typedef strunct _IMAGE_NT_HEADERS {  \n");
 	for (i = 0; i < 3; i++) {
 		if (!strcmp("Signature", NtHeaders[i])) {
-			ptr = &tempi;
+			ptr = (unsigned char*)&tempi;
 			printf("   %-30s %-10s ", NtType[i], NtHeaders[i]);
 			printf("= %08x(%s) \n", tempi, ptr);
 		}
@@ -211,14 +215,17 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 		}
 	}
 	printf("} IMAGE_NT_HEADER32, *PIMAGE_NT_HEADER32 \n\n");
+	printf("Press 'q' to Quit!!! \n");
 
-	getch();
+	if(getch() == 'q') {
+		return;
+	}
 
 	system("cls");
 
 	fseek(input, 0x3C, SEEK_SET);
 
-	ptr = &tempi;
+	ptr = (unsigned char*)&tempi;
 	for (i = 0; i < 4; i++) {
 		*(ptr++) = fgetc(input);
 	}
@@ -229,11 +236,11 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 			fseek(input, tempi, SEEK_SET);
 			printf("   %-10s %-20s = ", FileType[i], FileHeader[i]);
 
-			ptr = &temps;
+			ptr = (unsigned char*) &(Temp.temps);
 			for (j = 0; j < 2; j++) {
 				*(ptr++) = fgetc(input);
 			}
-			printf("%04X \n", temps);
+			printf("%04X \n", Temp.temps);
 
 			tempi += 2;
 		}
@@ -243,13 +250,16 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 		}
 	}
 	printf("} IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER; \n\n");
+	printf("Press 'q' to Quit!!! \n");
 
-	getch();
+	if(getch() == 'q') {
+		return;
+	}
 
 	system("cls");
 
 	fseek(input, 0x3C, SEEK_SET);
-	ptr = &tempi;
+	ptr = (unsigned char*)&tempi;
 	for (i = 0; i < 4; i++) {
 		*(ptr++) = fgetc(input);
 	}
@@ -270,11 +280,11 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 				fseek(input, tempi, SEEK_SET);
 				printf("   %-10s %-30s = ", OptionalType[i], OptionalHeader[i]);
 
-				ptr = &temps;
+				ptr = (unsigned char*) &(Temp.temps);
 				for (j = 0; j < 2; j++) {
 					*(ptr++) = fgetc(input);
 				}
-				printf("%04X \n", temps);
+				printf("%04X \n", Temp.temps);
 
 				tempi += 2;
 			}
@@ -282,7 +292,7 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 				fseek(input, tempi, SEEK_SET);
 				printf("   %-10s %-30s = ", OptionalType[i], OptionalHeader[i]);
 
-				ptr = &tempi;
+				ptr = (unsigned char*)&tempi;
 				for (j = 0; j < 4; j++) {
 					*(ptr++) = fgetc(input);
 				}
@@ -305,13 +315,56 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 		}
 	}
 	printf("} IMAGE_OPTIONAL_HEADER32, *PIMAGE_OPTIONAL_HEADER32; \n\n");
+	printf("Press 'q' to Quit!!! \n");
+
+	if(getch() == 'q') {
+		return;
+	}
+
+	system("cls");
+	/*
+	e_lfanew + (0xF8 - 0x80)
+	*/
+	fseek(input, 0x3C, SEEK_SET);
+	ptr = (unsigned char*)&tempi;
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+	fseek(input, tempi + (0xF8-0x80) - 4, SEEK_SET);
+
+	ptr = (unsigned char*)&(Temp.temp4);
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+	fseek(input, tempi + (0xF8-0x80), SEEK_SET);
+
+	for(i=0; i<Temp.temp4; i++) {
+		printf("typedef struct _IMAGE_DATA_DIRECTORY {   // %s \n", Directory[i]);
+
+		ptr = (unsigned char*)&tempi;
+		for(j=0; j<4; j++) {
+			*(ptr++) = fgetc(input);
+		}
+		printf("   DWORD   VirtualAddress = %08X; \n", tempi);
+
+		ptr = (unsigned char*)&tempi;
+		for(j=0; j<4; j++) {
+			*(ptr++) = fgetc(input);
+		}
+		printf("   DWORD   Size           = %08X; \n", tempi);
+
+		printf("} IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY; \n\n");
+	}
 
 	getch();
 }
 
 void show_SectionHeaders(char* str, FILE* input)
 {
-	 printf("show Sectionheaders \n");
+	char* Section[] = { "NAME[8]", "PhysicalAddress", "VirtualSize", "VirtualAddress", "SizeOfRawData", "PointerToRawData", "PointerToRelocations", "PointerToLinenumbers", "NumberOfRelocations", "Characteristics" };
+
+	// 1. e_lfanew + 미지수 -> FILE_HEADER_OFFSET + sizeOfOptionalHeader
+
 }
 
 void show(char* str, FILE* input)
@@ -352,7 +405,6 @@ int main(int argc, char * argv[])
 	char* instName[] = { "show", "save" };
 
 	int len, i;
-
 	
 	if(argc<2) {
 		intro();
