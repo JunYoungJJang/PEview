@@ -5,6 +5,7 @@
 #include <basetsd.h>
 #include <Windows.h>
 #include <winnt.h>
+#include <process.h>
 
 void textcolor(int color_number) { // 가져온 함수(글자 색 바꾸기)
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),color_number);
@@ -389,9 +390,40 @@ void show(char* str, FILE* input)
 	 }
 }
 
+DWORD WINAPI save_all(LPVOID lpParam)
+{
+	MessageBoxA(NULL, "Saved all in the one file completely!!!", "Complete", NULL);
+}
+
+DWORD WINAPI save_modules(LPVOID lpParam)
+{
+	MessageBoxA(NULL, "Saved the result in modules completely!!!", "Complete", NULL);
+}
+
 void save(char* str, FILE* input)
 {
-	printf("saved it! \n");
+	char* details[] = { " all", " modules" };
+	HANDLE hthread = NULL;
+
+	int i;
+
+	for(i=0; i<sizeof(details) / sizeof(char*); i++) {
+		if(!strcmp(str, details[i])) {
+			if(i==0) {   // save_all
+				hthread = CreateThread(NULL, 0, save_all, NULL, 0, NULL);
+			}
+			else {   // save_modules
+				hthread = CreateThread(NULL, 0, save_modules, NULL, 0, NULL);
+			}
+		}
+	}
+		
+	if(hthread != NULL) {
+		CloseHandle(hthread);
+	}
+	else {
+		printf("Illegal Instruction!!! \n");
+	}
 }
 
 int main(int argc, char * argv[])
