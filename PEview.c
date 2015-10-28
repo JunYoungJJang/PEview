@@ -6,6 +6,8 @@
 #include <Windows.h>
 #include <winnt.h>
 #include <process.h>
+#include <direct.h>
+#include <wchar.h>
 
 void textcolor(int color_number) { // 가져온 함수(글자 색 바꾸기)
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),color_number);
@@ -363,7 +365,7 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 void show_SectionHeaders(char* str, FILE* input)
 {
 	char* Section[] = { "NAME[8]", "PhysicalAddress", "VirtualSize", "VirtualAddress", "SizeOfRawData", "PointerToRawData", "PointerToRelocations", "PointerToLinenumbers", "NumberOfRelocations", "Characteristics" };
-
+	
 	// 1. e_lfanew + 미지수 -> FILE_HEADER_OFFSET + sizeOfOptionalHeader
 
 }
@@ -392,6 +394,17 @@ void show(char* str, FILE* input)
 
 DWORD WINAPI save_all(LPVOID lpParam)
 {
+	wchar_t path[512];
+	wchar_t name[] = TEXT("_PE.txt");
+	wchar_t * ptr;
+
+	int i, j;
+
+	FILE * output;
+
+	GetModuleFileName(NULL, path, sizeof(path));
+	wcsrchr(
+
 	MessageBoxA(NULL, "Saved all in the one file completely!!!", "Complete", NULL);
 }
 
@@ -429,7 +442,6 @@ void save(char* str, FILE* input)
 int main(int argc, char * argv[])
 {
 	FILE * input;
-	FILE * output;
 
 	void (*inst[])(char* str, FILE* input) = { show, save };
 
