@@ -7,7 +7,7 @@
 #include <winnt.h>
 #include <process.h>
 #include <direct.h>
-#include <wchar.h>
+#include <io.h>
 
 void textcolor(int color_number) { // 가져온 함수(글자 색 바꾸기)
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),color_number);
@@ -132,7 +132,7 @@ void show_DosHeader(char* str, FILE* input)
 				printf("%10s %10s = ", "WORD", varName[i]);
 
 				fseek(input, 0, SEEK_SET);
-				ptr = &temps;
+				ptr = (char *)&temps;
 				for (j = 0; j < 2; j++) {
 					*(ptr++) = fgetc(input);
 				}
@@ -365,8 +365,75 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 void show_SectionHeaders(char* str, FILE* input)
 {
 	char* Section[] = { "NAME[8]", "PhysicalAddress", "VirtualSize", "VirtualAddress", "SizeOfRawData", "PointerToRawData", "PointerToRelocations", "PointerToLinenumbers", "NumberOfRelocations", "Characteristics" };
+	char* type[] = { "BYTE", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "WORD", "WORD", "DWORD" };
+	char size[] = { 8, 4, 4, 4, 4, 4, 4, 2, 2, 4 };
 	
+	char* ptr, name[9];
+
+	int temp1, temp2, i, j, k;
+	short temps;
+
 	// 1. e_lfanew + 미지수 -> FILE_HEADER_OFFSET + sizeOfOptionalHeader
+	fseek(input, 0x3C, SEEK_SET);
+	ptr = (char*)&temp1;
+	for (i = 0; i < 4; i++) {
+		*(ptr++) = fgetc(input);
+	}
+
+	fseek(input, temp1 + 0x6, SEEK_SET);   // number of sections
+	ptr = (char*)&temps;
+	for(i = 0; i < 2; i++) {
+		*(ptr++) = fgetc(input);
+	}
+
+	fseek(input, temp1 + 0x14, SEEK_SET);   // Optional Header
+	temp2 = 0;
+	ptr = (char*)&temp2;
+	for(i = 0; i < 2; i++) {
+		*(ptr++) = fgetc(input);
+	}
+
+	fseek(input, temp1 + 0x18 + temp2, SEEK_SET);   // section header 구조체 배열 첫 번째 멤버 변수
+	for(i = 0; i < temps; i++) {
+		printf("typedef struct _IMAGE_SECTION_HEADER { \n");
+		for(j = 0; j < sizeof(Section) / sizeof(char*); j++) {
+			if(j == 0) {
+				printf("   %8s  Name[8] = '");
+				for(k=0; k<8; k++) {
+					name[k] = fgetc(input);
+				}
+				name[k] = '\0';
+
+				printf("%s \n", name);
+			}
+			else if(j == 1) {   // union 구조체
+				printf("   union { \n");
+				printf("   %8s  PhysicalAddress \n");
+				printf("   %8s  VirtualSize = ");
+				
+				ptr = (char*)&temp1; 
+				for(k = 0; k < 4; k++) {
+					*(ptr++) = fgetc(input);
+				}
+
+				printf("%08X \n", temp1);
+			}
+			else {
+				printf("   %-6s  %s ", type[j], Section[j]);
+
+				temp1 = 0;
+				ptr = (char*)&temp1;
+				for(k = 0; k < size[j]; k++) {
+					*(ptr++) = fgetc(input);
+				}
+				
+				printf("%08X \n", temp1);
+			}
+		}
+		printf("} IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER; \n\n");
+
+		getch();
+	}
 
 }
 
@@ -394,18 +461,26 @@ void show(char* str, FILE* input)
 
 DWORD WINAPI save_all(LPVOID lpParam)
 {
-	wchar_t path[512];
-	wchar_t name[] = TEXT("_PE.txt");
-	wchar_t * ptr;
-
-	int i, j;
+	int i, j, nResult;
+	char* ptr, path[] = "C:\\PEview\\";
 
 	FILE * output;
 
-	GetModuleFileName(NULL, path, sizeof(path));
-	wcsrchr(
+	nResult = access(path, 0);
+	if(nResult == -1) {
+		mkdir(path);
+	}
+
+	output = fopen("C:\PEview\\", "rt");
+	if(output == NULL) {
+		printf("Failed to open the file \n");
+		return;
+	}
+	fprintf(output, "Hello?");
 
 	MessageBoxA(NULL, "Saved all in the one file completely!!!", "Complete", NULL);
+
+	return 0;
 }
 
 DWORD WINAPI save_modules(LPVOID lpParam)
