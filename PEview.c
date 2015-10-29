@@ -21,7 +21,7 @@ void textcolor(int color_number) { // 가져온 함수(글자 색 바꾸기)
 0x00F4 라는 매개변수 값을 넘겨주면 되는 것이다.
 */
 
-void intro() {   // 프로그램 초기 화면
+void intro() {   // 프로그램 초기 화면 : 디자인 다시 해야 함
 		printf("          ..........    @ @   @     @    @ @   @                   ..........\n\
           .........    @   @  @ @   @   @  @   @                   .........\n\
            ........    @@@@@@ @   @ @  @@@@@@  @                   ........\n\
@@ -77,7 +77,7 @@ void show_Allhex(char* str, FILE* input)   // 추가 할꺼: fseek
 		}
 		printf("%02x ", hex);
 
-		if (i % 8 == 7) {
+		if (i % 8 == 7) {   // fileOffset 8바이트 8바이트 문자열
 			putchar(' ');
 		}
 		if (i % 16 == 15) {
@@ -110,7 +110,7 @@ void show_Allhex(char* str, FILE* input)   // 추가 할꺼: fseek
 }
 
 
-void show_fileMemMap(char* str, FILE* input)
+void show_fileMemMap(char* str, FILE* input)   
 {
 	printf("show file/Memory Map \n");
 }
@@ -362,7 +362,7 @@ void show_NTHeaders(char* str, FILE* input)   // 보류할 점: Characteristics 
 	getch();
 }
 
-void show_SectionHeaders(char* str, FILE* input)
+void show_SectionHeaders(char* str, FILE* input)   // 출력 형식/소스 코드 등 보수 필요
 {
 	char* Section[] = { "NAME[8]", "PhysicalAddress", "VirtualSize", "VirtualAddress", "SizeOfRawData", "PointerToRawData", "PointerToRelocations", "PointerToLinenumbers", "NumberOfRelocations", "Characteristics" };
 	char* type[] = { "BYTE", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "DWORD", "WORD", "WORD", "DWORD" };
@@ -445,7 +445,7 @@ void show_SectionHeaders(char* str, FILE* input)
 
 }
 
-void show(char* str, FILE* input)
+void show(char* str, FILE* input)   // 키보드 인터럽트 멀티 쓰레딩으로 처리하기 예정
 {
 	 char* details[] = { " allhex", " file/memory map", " dosheader", " ntheaders", " sectionheaders" };
 	 void (*subDetail[])(char* str, FILE* input) = { show_Allhex, show_fileMemMap, show_DosHeader, show_NTHeaders, show_SectionHeaders };
@@ -462,12 +462,12 @@ void show(char* str, FILE* input)
 		 }
 	 }
 
-	 if(flag) {   // show ?
+	 if(flag) {   // show ? 도 마지막에 구현 예정
 		 printf("Illegal Instruction!!! \n");
 	 }
 }
 
-DWORD WINAPI save_all(LPVOID lpParam)
+DWORD WINAPI save_all(LPVOID lpParam)   // 미완성
 {
 	int i, j, nResult;
 	char* ptr, path[] = "C:\\PEview\\";
@@ -475,7 +475,7 @@ DWORD WINAPI save_all(LPVOID lpParam)
 	FILE * output;
 
 	nResult = access(path, 0);
-	if(nResult == -1) {
+	if(nResult == -1) {   // 디렉토리 없으면 생성 : 드라이브 명 수정 필요
 		mkdir(path);
 	}
 
@@ -491,7 +491,7 @@ DWORD WINAPI save_all(LPVOID lpParam)
 	return 0;
 }
 
-DWORD WINAPI save_modules(LPVOID lpParam)
+DWORD WINAPI save_modules(LPVOID lpParam)   // 미완성
 {
 	MessageBoxA(NULL, "Saved the result in modules completely!!!", "Complete", NULL);
 }
@@ -505,10 +505,10 @@ void save(char* str, FILE* input)
 
 	for(i=0; i<sizeof(details) / sizeof(char*); i++) {
 		if(!strcmp(str, details[i])) {
-			if(i==0) {   // save_all
+			if(i==0) {   // save_all : 결과를 하나의 파일에 저장
 				hthread = CreateThread(NULL, 0, save_all, NULL, 0, NULL);
 			}
-			else {   // save_modules
+			else {   // save_modules : 결과를 여러 개의 파일로 저장
 				hthread = CreateThread(NULL, 0, save_modules, NULL, 0, NULL);
 			}
 		}
@@ -517,12 +517,12 @@ void save(char* str, FILE* input)
 	if(hthread != NULL) {
 		CloseHandle(hthread);
 	}
-	else {
+	else {   // 입력 오류나 thread 오류임 : 수정 해야 됨.
 		printf("Illegal Instruction!!! \n");
 	}
 }
 
-int main(int argc, char * argv[])
+int main(int argc, char * argv[])   // 입력된 옵션 처리 기능 추가
 {
 	FILE * input;
 
@@ -553,17 +553,17 @@ int main(int argc, char * argv[])
 		len = strlen(buffer);
 		buffer[len - 1] = '\0';
 
-		for(i=0; i<strlen(buffer); i++) {   // 대문자 -> 소문자
+		for(i=0; i<strlen(buffer); i++) {   // 대문자 -> 소문자 : 대소문자 구분 안 함
 			if(buffer[i] >= 'A' && buffer[i] <= 'Z') {
 				buffer[i] += 'a'-'A';
 			}
-	    }
+	    	}
 
 		for(i=0; i<sizeof(instName)/sizeof(char *); i++) {   // 명령어 찾기 & 실행
 			 if(!strncmp(buffer, instName[i], strlen(instName[i]))) {
 				inst[i](buffer+strlen(instName[i]), input);
-		     }
-	    }
+		     	}
+	    	}
 	}while(strncmp(buffer, "quit", sizeof(buffer)) && strncmp(buffer, "\\q", sizeof(buffer)));
 
 	printf("\n~bye! \n");
