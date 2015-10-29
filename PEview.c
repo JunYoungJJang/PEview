@@ -393,12 +393,14 @@ void show_SectionHeaders(char* str, FILE* input)
 		*(ptr++) = fgetc(input);
 	}
 
+	system("cls");
+
 	fseek(input, temp1 + 0x18 + temp2, SEEK_SET);   // section header 구조체 배열 첫 번째 멤버 변수
 	for(i = 0; i < temps; i++) {
 		printf("typedef struct _IMAGE_SECTION_HEADER { \n");
 		for(j = 0; j < sizeof(Section) / sizeof(char*); j++) {
 			if(j == 0) {
-				printf("   %8s  Name[8] = '");
+				printf("   %8s  Name[8] = '", type[j]);
 				for(k=0; k<8; k++) {
 					name[k] = fgetc(input);
 				}
@@ -408,8 +410,8 @@ void show_SectionHeaders(char* str, FILE* input)
 			}
 			else if(j == 1) {   // union 구조체
 				printf("   union { \n");
-				printf("   %8s  PhysicalAddress \n");
-				printf("   %8s  VirtualSize = ");
+				printf("   %8s  PhysicalAddress \n", type[j]);
+				printf("   %8s  VirtualSize = ", type[j]);
 				
 				ptr = (char*)&temp1; 
 				for(k = 0; k < 4; k++) {
@@ -417,6 +419,7 @@ void show_SectionHeaders(char* str, FILE* input)
 				}
 
 				printf("%08X \n", temp1);
+				printf("   } \n");
 			}
 			else {
 				printf("   %-6s  %s ", type[j], Section[j]);
@@ -427,7 +430,12 @@ void show_SectionHeaders(char* str, FILE* input)
 					*(ptr++) = fgetc(input);
 				}
 				
-				printf("%08X \n", temp1);
+				if(size[j] == 2) {
+					printf("%04X \n", temp1);	
+				}
+				else {
+					printf("%08X \n", temp1);
+				}
 			}
 		}
 		printf("} IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER; \n\n");
